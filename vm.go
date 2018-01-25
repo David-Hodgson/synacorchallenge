@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -407,11 +408,17 @@ func ReadBinaryFile(filename string) []uint16 {
 
 func main() {
 
+	flag.Parse()
 	fmt.Println("=========================================================")
 	fmt.Println("Synacor Challenge")
 	fmt.Println()
 
-	fileName := "D:\\temp\\synacor\\challenge.bin"
+	if len(flag.Args()) == 0 {
+		fmt.Println("Program file not specified")
+		return
+	}
+
+	fileName := flag.Args()[0] //"D:\\temp\\synacor\\challenge.bin"
 	fmt.Println("Reading program from: ", fileName)
 	program := ReadBinaryFile(fileName)
 	fmt.Println("Program has ", len(program), "instructions")
