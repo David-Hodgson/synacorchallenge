@@ -46,7 +46,7 @@ type stack struct {
 }
 
 func NewStack() stack{
-	newStack := stack{-1,make([]uint16,10)}
+	newStack := stack{-1,make([]uint16,100)}
 	return newStack
 }
 
@@ -61,6 +61,10 @@ func (s *stack) Pop() uint16 {
 
 func (s *stack) Push(value uint16) {
 	s.top += 1
+
+	if int(s.top) > len(s.values)-1 {
+		panic("Trying to add to full stack")
+	}
 	s.values[s.top] = value
 }
 /**
@@ -134,11 +138,9 @@ func runProgram(program []uint16) {
 	clearRegisters()
 	stack := NewStack();
 
-	limit := 1500
-
 	for ;; {
 
-		if programCounter < 0 || programCounter > len(program)-1 || programCounter > limit {
+		if programCounter < 0 || programCounter > len(program)-1 {
 			break;
 		}
 
@@ -208,8 +210,6 @@ func runProgram(program []uint16) {
 		case jt:
 			//jt: 7 a b
 			//if <a> is nonzero, jump to <b>
-
-
 			a := getValue(program[programCounter+1])
 			b := getValue(program[programCounter+2])
 
@@ -238,6 +238,24 @@ func runProgram(program []uint16) {
 			sum := (b+c) % 32768
 			registers[register] = sum
 			programCounter += 4
+		case mult:
+			//mult: 10 a b c
+			//store into <a> the product of <b> and <c> (modulo 32768)
+			register := program[programCounter+1]
+			b := getValue(program[programCounter+2])
+			c := getValue(program[programCounter+3])
+			product := (b*c) % 32768
+			registers[register] = product
+			programCounter += 4
+		case mod:
+			//mod: 11 a b c
+			//store into <a> the remainder of <b> divided by <c>
+			register := program[programCounter+1]
+			b := getValue(program[programCounter+2])
+			c := getValue(program[programCounter+3])
+			mod := b %c
+			registers[register] = mod
+			programCounter += 4
 		case and:
 			//and: 12 a b c
 			//	stores into <a> the bitwise and of <b> and <c>
@@ -264,7 +282,31 @@ func runProgram(program []uint16) {
 			value := b ^ 32767
 			registers[register] = value
 			programCounter += 3
-
+		case rmem:
+			//rmem: 15 a b
+			//read memory at address <b> and write it to <a>
+			register := program[programCounter+1]
+			b := getValue(program[programCounter+2])
+			value := program[b]
+			registers[register] = value
+			programCounter += 3
+		case wmem:
+			//wmem: 16 a b
+			//write the value from <b> into memory at address <a>
+			a := getValue(program[programCounter+1])
+			b := getValue(program[programCounter+2])
+			program[a] = b
+ 			programCounter += 3
+		case call:
+			//call: 17 a
+			//write the address of the next instruction to the stack and jump to <a>
+			a := getValue(program[programCounter+1])
+			stack.Push(uint16(programCounter+2))
+			programCounter = int(a)
+		case ret:
+			//ret: 18
+			//remove the top element from the stack and jump to it; empty stack = halt
+			programCounter = int(stack.Pop())
 		case out:
 			// out: 19 a
 			// write the character represented by ascii code <a> to the terminal
@@ -273,6 +315,8 @@ func runProgram(program []uint16) {
 			fmt.Print(character)
 			programCounter += 2
 		case noop:
+			// noop: 20
+			// no operations
 			programCounter += 1
 		default:
 			fmt.Println("Unknown instruction:",instruction, " at line ", programCounter)
@@ -293,6 +337,7 @@ func runProgram(program []uint16) {
 
 	}
 
+	fmt.Println("Program finished with progam counter at ", programCounter)
 }
 
 //TODO this whole method needs tidying up
@@ -353,6 +398,13 @@ func main() {
 	fmt.Println("Program has ", len(program), "instructions")
 	fmt.Println("=========================================================")
 	fmt.Println()
+
+	//TODO fudge for program length
+	//TODO add proper memory handling
+	if len(program) < 32768 {
+		ram := make([]uint16, 32768 -len(program))
+		program = append(program, ram...)
+	}
 
 	runProgram(program)
 
