@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
 	"fmt"
@@ -314,8 +315,19 @@ func runProgram(program []uint16) {
 			character := string(getValue(register))
 			fmt.Print(character)
 			programCounter += 2
+		case in:
+			//in: 20 a
+			//read a character from the terminal and write its ascii code to <a>; it can be assumed that once input starts, it will continue until a newline is encountered; this means that you can safely read whole lines from the keyboard and trust that they will be fully read
+			register := program[programCounter+1]
+			//This is dumb, go only reads the input when a new line is encountered - need to buffered the input some how
+			reader := bufio.NewReader(os.Stdin)
+			char, _, _ := reader.ReadRune()
+			fmt.Println("Read", char)
+			registers[register] = uint16(char)
+			programCounter += 2
+
 		case noop:
-			// noop: 20
+			// noop: 21
 			// no operations
 			programCounter += 1
 		default:
