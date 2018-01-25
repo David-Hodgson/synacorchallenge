@@ -139,6 +139,8 @@ func runProgram(program []uint16) {
 	clearRegisters()
 	stack := NewStack();
 
+	var inputBuffer string
+
 	for ;; {
 
 		if programCounter < 0 || programCounter > len(program)-1 {
@@ -214,7 +216,7 @@ func runProgram(program []uint16) {
 			a := getValue(program[programCounter+1])
 			b := getValue(program[programCounter+2])
 
- 			if a != 0 {
+			if a != 0 {
 				programCounter = int(b)
 			} else {
 				programCounter += 3
@@ -236,7 +238,7 @@ func runProgram(program []uint16) {
 			register := program[programCounter+1]
 			b := getValue(program[programCounter+2])
 			c := getValue(program[programCounter+3])
-			sum := (b+c) % 32768
+			sum := (b + c) % 32768
 			registers[register] = sum
 			programCounter += 4
 		case mult:
@@ -245,7 +247,7 @@ func runProgram(program []uint16) {
 			register := program[programCounter+1]
 			b := getValue(program[programCounter+2])
 			c := getValue(program[programCounter+3])
-			product := (b*c) % 32768
+			product := (b * c) % 32768
 			registers[register] = product
 			programCounter += 4
 		case mod:
@@ -254,7 +256,7 @@ func runProgram(program []uint16) {
 			register := program[programCounter+1]
 			b := getValue(program[programCounter+2])
 			c := getValue(program[programCounter+3])
-			mod := b %c
+			mod := b % c
 			registers[register] = mod
 			programCounter += 4
 		case and:
@@ -297,12 +299,12 @@ func runProgram(program []uint16) {
 			a := getValue(program[programCounter+1])
 			b := getValue(program[programCounter+2])
 			program[a] = b
- 			programCounter += 3
+			programCounter += 3
 		case call:
 			//call: 17 a
 			//write the address of the next instruction to the stack and jump to <a>
 			a := getValue(program[programCounter+1])
-			stack.Push(uint16(programCounter+2))
+			stack.Push(uint16(programCounter + 2))
 			programCounter = int(a)
 		case ret:
 			//ret: 18
@@ -319,11 +321,16 @@ func runProgram(program []uint16) {
 			//in: 20 a
 			//read a character from the terminal and write its ascii code to <a>; it can be assumed that once input starts, it will continue until a newline is encountered; this means that you can safely read whole lines from the keyboard and trust that they will be fully read
 			register := program[programCounter+1]
-			//This is dumb, go only reads the input when a new line is encountered - need to buffered the input some how
-			reader := bufio.NewReader(os.Stdin)
-			char, _, _ := reader.ReadRune()
-			fmt.Println("Read", char)
-			registers[register] = uint16(char)
+			//If we have no input we get some from the user
+			if len(inputBuffer) == 0 {
+				reader := bufio.NewReader(os.Stdin)
+				char, _, _ := reader.ReadLine()
+				inputBuffer += string(char)
+				inputBuffer += "\n"
+			}
+			//We pass the first item from the buffer to the program
+			registers[register] = uint16(inputBuffer[0])
+			inputBuffer = inputBuffer[1:]
 			programCounter += 2
 
 		case noop:
