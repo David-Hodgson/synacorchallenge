@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"flag"
+	"net/http"
 	"fmt"
 	"log"
 	"os"
@@ -116,6 +117,113 @@ in: 20 a
 noop: 21
   no operation
  */
+func getOpParameterCount(op uint16) int {
+
+	paramCount := 0
+	switch op {
+	case halt:
+		paramCount = 0
+	case set:
+		paramCount = 2
+	case push:
+		paramCount = 1
+	case pop:
+		paramCount = 1
+	case eq:
+		paramCount = 3
+	case gt:
+		paramCount = 3
+	case jmp:
+		paramCount = 1
+	case jt:
+		paramCount = 2
+	case jf:
+		paramCount = 2
+	case add:
+		paramCount = 3
+	case mult:
+		paramCount = 3
+	case mod:
+		paramCount = 3
+	case and:
+		paramCount = 3
+	case or:
+		paramCount = 3
+	case not:
+		paramCount = 2
+	case rmem:
+		paramCount = 2
+	case wmem:
+		paramCount = 2
+	case call:
+		paramCount = 1
+	case ret:
+		paramCount = 0
+	case out:
+		paramCount = 1
+	case in:
+		paramCount = 1
+	case noop:
+		paramCount = 0
+	}
+
+	return paramCount;
+}
+
+
+ func getOpCode(op uint16) string {
+
+ 	opcode := "uknown - "
+ 	opcode += string(op)
+	 switch op {
+	 case halt:
+		 opcode = "halt"
+	 case set:
+	 	opcode = "set"
+	 case push:
+	 	opcode = "push"
+	 case pop:
+	 	opcode = "pop"
+	 case eq:
+	 	opcode = "eq"
+	 case gt:
+	 	opcode = "gt"
+	 case jmp:
+	 	opcode = "jmp"
+	 case jt:
+	 	opcode = "jt"
+	 case jf:
+	 	opcode = "jf"
+	 case add:
+	 	opcode = "add"
+	 case mult:
+	 	opcode = "mult"
+	 case mod:
+	 	opcode = "mod"
+	 case and:
+	 	opcode = "and"
+	 case or:
+	 	opcode = "or"
+	 case not:
+	 	opcode = "not"
+	 case rmem:
+	 	opcode = "rmem"
+	 case wmem:
+	 	opcode = "wmem"
+	 case call:
+	 	opcode = "call"
+	 case ret:
+	 	opcode = "ret"
+	 case out:
+	 	opcode = "out"
+	 case in:
+	 	opcode = "in"
+	 case noop:
+	 	opcode = "noop"
+	 }
+
+	 return opcode;
+}
 
 var registers = make(map[uint16]uint16)
 
@@ -134,7 +242,7 @@ func getValue(value uint16) uint16 {
 	return value
 }
 
-func runProgram(program []uint16) {
+func runProgram(program []uint16, done chan bool) {
 
 	programCounter :=0
 	clearRegisters()
@@ -358,6 +466,7 @@ func runProgram(program []uint16) {
 	}
 
 	fmt.Println("Program finished with progam counter at ", programCounter)
+	done <- true
 }
 
 //TODO this whole method needs tidying up
@@ -432,6 +541,54 @@ func main() {
 		program = append(program, ram...)
 	}
 
-	runProgram(program)
+	programcode = program
+	done := make(chan bool)
+	go runProgram(program, done)
 
+	go func() {
+		http.HandleFunc("/", handler)
+		http.ListenAndServe(":8080", nil)
+	}()
+
+	<- done
+}
+
+var programcode []uint16
+
+func handler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Synacor Challenge - VM Status\n\n")
+
+	fmt.Fprintf(w, "Registers\n");
+	fmt.Fprintf(w, "---------\n\n");
+
+	for key,value := range registers {
+		fmt.Fprintf(w, "key:%d, value:%d\n", key,value)
+	}
+
+	fmt.Fprintf(w, "\n")
+	fmt.Fprintf(w, "Program\n");
+	fmt.Fprintf(w, "---------\n\n");
+
+	for i :=0; i<len(programcode); i++ {
+
+		op := programcode[i]
+
+		opCode := getOpCode(op)
+		parameterCount := getOpParameterCount(op)
+
+		fmt.Fprintf(w, "%d %s", i,opCode)
+
+		for j:=0; j<parameterCount;j++ {
+
+			if opCode =="out" && programcode[i+j+1] < 32768 {
+				fmt.Fprintf(w, " %s", string(programcode[i+j+1]))
+			} else {
+				fmt.Fprintf(w, " %d", programcode[i+j+1])
+			}
+
+		}
+		fmt.Fprintf(w, "\n")
+
+		i += parameterCount
+	}
 }
