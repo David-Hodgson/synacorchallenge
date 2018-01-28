@@ -70,53 +70,7 @@ func (s *stack) Push(value uint16) {
 	}
 	s.values[s.top] = value
 }
-/**
 
-halt: 0
-  stop execution and terminate the program
-set: 1 a b
-  set register <a> to the value of <b>
-push: 2 a
-  push <a> onto the stack
-pop: 3 a
-  remove the top element from the stack and write it into <a>; empty stack = error
-eq: 4 a b c
-  set <a> to 1 if <b> is equal to <c>; set it to 0 otherwise
-gt: 5 a b c
-  set <a> to 1 if <b> is greater than <c>; set it to 0 otherwise
-jmp: 6 a
-  jump to <a>
-jt: 7 a b
-  if <a> is nonzero, jump to <b>
-jf: 8 a b
-  if <a> is zero, jump to <b>
-add: 9 a b c
-  assign into <a> the sum of <b> and <c> (modulo 32768)
-mult: 10 a b c
-  store into <a> the product of <b> and <c> (modulo 32768)
-mod: 11 a b c
-  store into <a> the remainder of <b> divided by <c>
-and: 12 a b c
-  stores into <a> the bitwise and of <b> and <c>
-or: 13 a b c
-  stores into <a> the bitwise or of <b> and <c>
-not: 14 a b
-  stores 15-bit bitwise inverse of <b> in <a>
-rmem: 15 a b
-  read memory at address <b> and write it to <a>
-wmem: 16 a b
-  write the value from <b> into memory at address <a>
-call: 17 a
-  write the address of the next instruction to the stack and jump to <a>
-ret: 18
-  remove the top element from the stack and jump to it; empty stack = halt
-out: 19 a
-  write the character represented by ascii code <a> to the terminal
-in: 20 a
-  read a character from the terminal and write its ascii code to <a>; it can be assumed that once input starts, it will continue until a newline is encountered; this means that you can safely read whole lines from the keyboard and trust that they will be fully read
-noop: 21
-  no operation
- */
 func getOpParameterCount(op uint16) int {
 
 	paramCount := 0
@@ -171,37 +125,37 @@ func getOpParameterCount(op uint16) int {
 }
 
 
- func getOpCode(op uint16) string {
+func getOpCode(op uint16) string {
 
- 	opcode := "uknown - "
- 	opcode += string(op)
+	opcode := "uknown - "
+	opcode += string(op)
 	 switch op {
 	 case halt:
 		 opcode = "halt"
 	 case set:
-	 	opcode = "set"
+		opcode = "set"
 	 case push:
-	 	opcode = "push"
+		opcode = "push"
 	 case pop:
-	 	opcode = "pop"
+		opcode = "pop"
 	 case eq:
-	 	opcode = "eq"
+		opcode = "eq"
 	 case gt:
-	 	opcode = "gt"
+		opcode = "gt"
 	 case jmp:
-	 	opcode = "jmp"
+		opcode = "jmp"
 	 case jt:
-	 	opcode = "jt"
+		opcode = "jt"
 	 case jf:
-	 	opcode = "jf"
+		opcode = "jf"
 	 case add:
-	 	opcode = "add"
+		opcode = "add"
 	 case mult:
-	 	opcode = "mult"
+		opcode = "mult"
 	 case mod:
-	 	opcode = "mod"
+		opcode = "mod"
 	 case and:
-	 	opcode = "and"
+		opcode = "and"
 	 case or:
 	 	opcode = "or"
 	 case not:
@@ -449,15 +403,6 @@ func runProgram(program []uint16, done chan bool) {
 		default:
 			fmt.Println("Unknown instruction:",instruction, " at line ", programCounter)
 
-			fmt.Println(programCounter-5, " - ", program[programCounter-5])
-			fmt.Println(programCounter-4, " - ", program[programCounter-4])
-			fmt.Println(programCounter-3, " - ", program[programCounter-3])
-			fmt.Println(programCounter-2, " - ", program[programCounter-2])
-			fmt.Println(programCounter-1, " - ", program[programCounter-1])
-			fmt.Println(programCounter, " - ", program[programCounter])
-			fmt.Println(programCounter+1, " - ", program[programCounter+1])
-			fmt.Println(programCounter+2, " - ", program[programCounter+2])
-
 			fmt.Println("Registers: ", registers)
 			panic("Quiting")
 			programCounter++
@@ -527,7 +472,7 @@ func main() {
 		return
 	}
 
-	fileName := flag.Args()[0] //"D:\\temp\\synacor\\challenge.bin"
+	fileName := flag.Args()[0]
 	fmt.Println("Reading program from: ", fileName)
 	program := ReadBinaryFile(fileName)
 	fmt.Println("Program has ", len(program), "instructions")
@@ -569,7 +514,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Program\n");
 	fmt.Fprintf(w, "---------\n\n");
 
-	for i :=0; i<len(programcode); i++ {
+	for i :=0; i<len(programcode) && false; i++ {
 
 		op := programcode[i]
 
